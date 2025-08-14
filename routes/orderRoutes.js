@@ -1,6 +1,7 @@
 const express = require('express');
 const { getAllOrder, getOrderbyid, addOrder, updateOrder, deleteOrder } = require('../controller/orderController');
 const { upload } = require('../middleware/multer');
+const { authenticateToken, checkAdmin } = require('../middleware/authToken');
 
 
 
@@ -8,15 +9,15 @@ const { upload } = require('../middleware/multer');
 
 const router = express.Router();
 
-router.get('/', getAllOrder);
+router.get('/',authenticateToken, getAllOrder);
 
-router.get('/:orderid',getOrderbyid);
+router.get('/:orderid',authenticateToken,getOrderbyid);
 
-router.post('/',upload.fields([{ name: 'image' }]),addOrder);
+router.post('/',authenticateToken,upload.fields([{ name: 'image' }]),addOrder);
 
-router.patch('/:orderid',upload.fields([{ name: 'image' }]),updateOrder);
+router.patch('/:orderid',authenticateToken,upload.fields([{ name: 'image' }]),updateOrder);
 
-router.delete('/:orderid',deleteOrder);
+router.delete('/:orderid',authenticateToken,checkAdmin,deleteOrder);
 
 
 module.exports = router; 

@@ -1,12 +1,17 @@
 require('dotenv').config()
 const express = require('express')
 const mongoose = require('mongoose');
+const cors = require('cors')
 const userRoutes = require('./routes/userRoutes')
 const authRoutes = require('./routes/authRoutes')
 const orderRoutes = require('./routes/orderRoutes')
 const app = express()
 const port = 3000
 
+app.use(cors({
+  credentials: true,
+    origin: true
+}))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 app.use("/user",userRoutes)
