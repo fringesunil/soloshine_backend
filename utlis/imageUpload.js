@@ -5,7 +5,7 @@ const imageUpload = async(path)=>{
         const uploadresult =  await cloudinaryInstance.uploader.upload(path)
         return uploadresult.url;
     }catch(e){
-        next(e)
+        throw new Error(`Image upload failed: ${e.message}`);
     }
 }
 
