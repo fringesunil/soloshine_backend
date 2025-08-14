@@ -85,7 +85,27 @@ const addOrder = async (req, res) => {
 
  const updateOrder = async (req, res) => {
     try{
-    const updateorder = await Order.findByIdAndUpdate(req.params.orderid, req.body, {new:true})
+           let imageUrl=[];
+          const { ornamentDetails,userid,orderdate,ordertype } = req.body;
+          let parsedOrnamentDetails = ornamentDetails;
+        if (typeof ornamentDetails === 'string') {
+            parsedOrnamentDetails = JSON.parse(ornamentDetails);
+
+        }     
+        if (req.files && req.files['image']) {
+      imageUrl = await Promise.all(
+        req.files['image'].map(file => imageUpload(file.path))
+      );
+    } 
+     const order = {
+            userid:userid,
+            orderdate:orderdate,
+            ordertype:ordertype,
+            ornamentdetails:parsedOrnamentDetails,
+            image:imageUrl
+
+        }
+    const updateorder = await Order.findByIdAndUpdate(req.params.orderid, order, {new:true})
      res.status(200).json({
             success: true,
             data: updateorder,
