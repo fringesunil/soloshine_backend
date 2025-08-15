@@ -1,5 +1,5 @@
 const Order = require("../model/orderModel");
-const { imageUpload } = require("../utlis/imageUpload");
+const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
 
 const getAllOrder = async (req, res) => {
     try {
@@ -56,7 +56,7 @@ const addOrder = async (req, res) => {
         }     
         if (req.files && req.files['image']) {
       imageUrl = await Promise.all(
-        req.files['image'].map(file => imageUpload(file.path))
+        req.files['image'].map(file => imageUploadimgbb(file.path))
       );
     } 
         const order = new Order({
@@ -94,7 +94,7 @@ const addOrder = async (req, res) => {
         }     
         if (req.files && req.files['image']) {
       imageUrl = await Promise.all(
-        req.files['image'].map(file => imageUpload(file.path))
+        req.files['image'].map(file => imageUploadimgbb(file.path))
       );
     } 
      const order = {
