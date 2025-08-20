@@ -48,7 +48,7 @@ const getOrderbyid = async (req, res) => {
 const addOrder = async (req, res) => {
     try {
           let imageUrl=[];
-          const { ornamentDetails,userid,orderdate,ordertype } = req.body;
+          const { ornamentDetails,userid,orderdate,ordertype,remark } = req.body;
           let parsedOrnamentDetails = ornamentDetails;
         if (typeof ornamentDetails === 'string') {
             parsedOrnamentDetails = JSON.parse(ornamentDetails);
@@ -63,6 +63,7 @@ const addOrder = async (req, res) => {
             userid:userid,
             orderdate:orderdate,
             ordertype:ordertype,
+            remark:remark,
             ornamentdetails:parsedOrnamentDetails,
             image:imageUrl
 

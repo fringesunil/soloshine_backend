@@ -16,6 +16,7 @@ const orderSchema = new mongoose.Schema({
         enum: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
         default: 'Pending'
     },
+    remark:String,
     ornamentdetails: [
         {
             name: {
