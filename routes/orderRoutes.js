@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllOrder, getOrderbyid, addOrder, updateOrder, deleteOrder } = require('../controller/orderController');
+const { getAllOrder, getOrderbyid, addOrder, updateOrder, deleteOrder, updateOrderStatusBulk } = require('../controller/orderController');
 const { upload } = require('../middleware/multer');
 const { authenticateToken, checkAdmin } = require('../middleware/authToken');
 
@@ -19,5 +19,6 @@ router.patch('/:orderid',authenticateToken,upload.any(),updateOrder);
 
 router.delete('/:orderid',authenticateToken,checkAdmin,deleteOrder);
 
+router.post('/updateorderstatus',authenticateToken,updateOrderStatusBulk);
 
 module.exports = router; 

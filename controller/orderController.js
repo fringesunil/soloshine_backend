@@ -93,12 +93,11 @@ const updateOrder = async (req, res) => {
     try {
         let { ornamentDetails, userid, orderdate, ordertype, status } = req.body;
 
-        // Parse ornamentDetails if it's a string
         if (typeof ornamentDetails === 'string') {
             ornamentDetails = JSON.parse(ornamentDetails);
         }
 
-        // Fetch the existing order to preserve current images
+       
         const existingOrder = await Order.findById(req.params.orderid);
         if (!existingOrder) {
             return res.status(404).json({
@@ -108,31 +107,31 @@ const updateOrder = async (req, res) => {
             });
         }
 
-        // Process images only if req.files exists and has entries
+        
         if (ornamentDetails && req.files && req.files.length > 0) {
             for (let i = 0; i < ornamentDetails.length; i++) {
                 const fieldName = `image${i}`;
                 const filesForItem = req.files.filter(file => file.fieldname === fieldName);
 
                 if (filesForItem.length > 0) {
-                    // Update images only if new files are provided
+                   
                     const uploadedUrls = await Promise.all(
                         filesForItem.map(file => imageUploadimgbb(file.path))
                     );
                     ornamentDetails[i].image = uploadedUrls;
                 } else {
-                    // Retain existing images from the database if no new files are provided
+                    
                     ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
                 }
             }
         } else if (ornamentDetails) {
-            // If ornamentDetails is provided but no files, retain existing images
+           
             for (let i = 0; i < ornamentDetails.length; i++) {
                 ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
             }
         }
 
-        // Create update object with only provided fields
+        
         const updateData = {};
         if (userid !== undefined) updateData.userid = userid;
         if (orderdate !== undefined) updateData.orderdate = orderdate;
@@ -171,10 +170,65 @@ const updateOrder = async (req, res) => {
         });
   }
 
+  const updateOrderStatusBulk = async (req, res) => {
+    try {
+        const { orderIds, status } = req.body;
+
+        if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: "Order IDs array is required and cannot be empty"
+            });
+        }
+
+        if (!status || !['Pending', 'In Progress', 'Completed', 'Cancelled'].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: "Valid status is required (Pending, In Progress, Completed, Cancelled)"
+            });
+        }
+
+        const result = await Order.updateMany(
+            { _id: { $in: orderIds } },
+            { $set: { status } },
+            { new: true }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: "No orders found with provided IDs"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                modifiedCount: result.modifiedCount,
+                matchedCount: result.matchedCount
+            },
+            message: "Order statuses updated successfully"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+
   module.exports={
     getAllOrder,
     getOrderbyid,
     addOrder,
     updateOrder,
-    deleteOrder
+    deleteOrder,
+    updateOrderStatusBulk
   }
