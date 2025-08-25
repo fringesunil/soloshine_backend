@@ -23,11 +23,11 @@ const orderSchema = new mongoose.Schema({
                 type:String,
                 required:true
             },
-            material: {
-                type: String,
-                enum: ['Gold', 'Rose Gold', 'White Gold', 'Platinum'],
-                required: true,
-            },
+            // material: {
+            //     type: String,
+            //     enum: ['Gold', 'Rose Gold', 'White Gold', 'Platinum'],
+            //     required: true,
+            // },
             weight: {
                 type: Number,
                 required: true,
@@ -35,15 +35,18 @@ const orderSchema = new mongoose.Schema({
             purity: {
                 type: String,
                 required: true,
-                enum: ['18K', '22K', '24K']
+                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold','Other']
             },
             quantity: {
                 type: Number,
                 required: true,
             },
+             remarks: {
+                type: String,
+            },
+            image: [String]
         }
     ],
-      image: [String]
 });
 
 

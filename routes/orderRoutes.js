@@ -13,9 +13,9 @@ router.get('/',authenticateToken, getAllOrder);
 
 router.get('/:orderid',authenticateToken,getOrderbyid);
 
-router.post('/',authenticateToken,upload.fields([{ name: 'image' }]),addOrder);
+router.post('/',authenticateToken,upload.any(),addOrder);
 
-router.patch('/:orderid',authenticateToken,upload.fields([{ name: 'image' }]),updateOrder);
+router.patch('/:orderid',authenticateToken,upload.any(),updateOrder);
 
 router.delete('/:orderid',authenticateToken,checkAdmin,deleteOrder);
 
