@@ -3,7 +3,9 @@ const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
 
 const getAllOrder = async (req, res) => {
     try {
-        const order = await Order.find(req.query).populate('userid','-password').exec();
+        const order = await Order.find(req.query).populate('userid','-password').populate({path:'ornamentdetails.name',
+            model:'Category'
+        }).exec();
         res.status(200).json({
             success: true,
             data: order,
@@ -21,7 +23,9 @@ const getAllOrder = async (req, res) => {
 
 const getOrderbyid = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.orderid).populate('userid','-password').exec();
+        const order = await Order.findById(req.params.orderid).populate('userid','-password').populate({path:'ornamentdetails.name',
+            model:'Category'
+        }).exec();
         if (!order) {
             return res.status(404).json({
                 success: false,

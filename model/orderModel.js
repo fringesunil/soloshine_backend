@@ -16,12 +16,13 @@ const orderSchema = new mongoose.Schema({
         enum: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
         default: 'Pending'
     },
-    remark:String,
+    remark: String,
     ornamentdetails: [
         {
             name: {
-                type:String,
-                required:true
+                type: mongoose.ObjectId,
+                ref: "Category",
+                required: true
             },
             // material: {
             //     type: String,
@@ -35,13 +36,13 @@ const orderSchema = new mongoose.Schema({
             purity: {
                 type: String,
                 required: true,
-                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold','Other']
+                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold', 'Other']
             },
             quantity: {
                 type: Number,
                 required: true,
             },
-             remarks: {
+            remarks: {
                 type: String,
             },
             image: [String]
