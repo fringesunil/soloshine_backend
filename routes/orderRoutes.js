@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllOrder, getOrderbyid, addOrder, updateOrder, deleteOrder, updateOrderStatusBulk } = require('../controller/orderController');
+const { getAllOrder, getOrderbyid, addOrder, updateOrder, deleteOrder, updateOrderStatusBulk, getDashboardStats } = require('../controller/orderController');
 const { upload } = require('../middleware/multer');
 const { authenticateToken, checkAdmin } = require('../middleware/authToken');
 
@@ -8,6 +8,8 @@ const { authenticateToken, checkAdmin } = require('../middleware/authToken');
 
 
 const router = express.Router();
+
+router.get('/dashboard', authenticateToken, getDashboardStats);
 
 router.get('/',authenticateToken, getAllOrder);
 
