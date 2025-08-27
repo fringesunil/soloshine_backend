@@ -9,7 +9,6 @@ const { authenticateToken, checkAdmin } = require('../middleware/authToken');
 
 const router = express.Router();
 
-router.get('/dashboard', authenticateToken, getDashboardStats);
 
 router.get('/',authenticateToken, getAllOrder);
 
