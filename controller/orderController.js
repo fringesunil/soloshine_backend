@@ -67,13 +67,33 @@ const addOrder = async (req, res) => {
   
         ornamentDetails[i].image = uploadedUrls;
       }
-  
-      const order = new Order({
-        userid,
-        orderdate,
-        ordertype,
-        ornamentdetails: ornamentDetails
+       let orderno;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 5;
+     while (!isUnique && attempts < maxAttempts) {
+      const randomNum = Math.floor(100000 + Math.random() * 900000);
+      orderno = ordertype === 'Single' ? randomNum.toString() : `BK${randomNum}`;
+      const existingOrder = await Order.findOne({ orderno });
+      if (!existingOrder) {
+        isUnique = true;
+      }
+      attempts++;
+    }
+    if (!isUnique) {
+      return res.status(409).json({
+        success: false,
+        data: [],
+        message: "Unable to generate a unique order number, please try again later"
       });
+    }
+    const order = new Order({
+      userid,
+      orderdate,
+      ordertype,
+      orderno,
+      ornamentdetails: ornamentDetails
+    });
   
       await order.save();
   

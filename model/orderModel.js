@@ -11,6 +11,10 @@ const orderSchema = new mongoose.Schema({
         enum: ["Single", "Bulk"],
         default: "Single"
     },
+    orderno:{
+        type:String,
+        unique:true
+    },
     status: {
         type: String,
         enum: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
