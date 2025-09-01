@@ -73,7 +73,7 @@ const addOrder = async (req, res) => {
     const maxAttempts = 5;
      while (!isUnique && attempts < maxAttempts) {
       const randomNum = Math.floor(100000 + Math.random() * 900000);
-      orderno = ordertype === 'Single' ? randomNum.toString() : `BK${randomNum}`;
+      orderno = ordertype === 'Bulk' ? randomNum.toString() : `BK${randomNum}`;
       const existingOrder = await Order.findOne({ orderno });
       if (!existingOrder) {
         isUnique = true;
