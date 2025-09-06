@@ -56,7 +56,7 @@ const addOrder = async (req, res) => {
       if (typeof ornamentDetails === 'string') {
         ornamentDetails = JSON.parse(ornamentDetails);
       }
-  
+      if(req.files){
       for (let i = 0; i < ornamentDetails.length; i++) {
         const fieldName = `image${i}`;
         const filesForItem = req.files.filter(file => file.fieldname === fieldName);
@@ -66,6 +66,7 @@ const addOrder = async (req, res) => {
         );
   
         ornamentDetails[i].image = uploadedUrls;
+      }
       }
        let orderno;
     let isUnique = false;
