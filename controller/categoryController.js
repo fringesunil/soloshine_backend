@@ -69,7 +69,7 @@ const addCategory = async (req, res) => {
     
     res.status(201).json({
       success: true,
-      data: [savedCategory],
+      data: savedCategory,
       message: "Category created successfully"
     });
   } catch (error) {
