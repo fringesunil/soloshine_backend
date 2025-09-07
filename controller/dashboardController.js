@@ -44,18 +44,24 @@ const getOrderGraphData = async (req, res) => {
     try {
         const { startDate, endDate, groupBy = 'day' } = req.query;
         
+        // Set default date range if not provided
+        let defaultStartDate, defaultEndDate;
+        if (!startDate || !endDate) {
+            // If no date range provided, get the last 30 days by default
+            defaultEndDate = new Date();
+            defaultStartDate = new Date();
+            defaultStartDate.setDate(defaultStartDate.getDate() - 30);
+        }
+
         // Build date filter
         let dateFilter = {};
-        if (startDate && endDate) {
-            dateFilter.orderdate = {
-                $gte: new Date(startDate),
-                $lte: new Date(endDate)
-            };
-        } else if (startDate) {
-            dateFilter.orderdate = { $gte: new Date(startDate) };
-        } else if (endDate) {
-            dateFilter.orderdate = { $lte: new Date(endDate) };
-        }
+        const actualStartDate = startDate ? new Date(startDate) : defaultStartDate;
+        const actualEndDate = endDate ? new Date(endDate) : defaultEndDate;
+        
+        dateFilter.orderdate = {
+            $gte: actualStartDate,
+            $lte: actualEndDate
+        };
 
         // Determine date grouping format based on groupBy parameter
         let dateFormat;
@@ -105,18 +111,76 @@ const getOrderGraphData = async (req, res) => {
             }
         ]);
 
-        // Format the data for frontend consumption
-        const formattedData = orderGraphData.map(item => {
+        // Create a map of existing data for quick lookup
+        const dataMap = new Map();
+        orderGraphData.forEach(item => {
             const singleOrder = item.orders.find(order => order.orderType === 'Single');
             const bulkOrder = item.orders.find(order => order.orderType === 'Bulk');
             
-            return {
+            dataMap.set(item._id, {
                 date: item._id,
                 totalOrders: item.totalOrders,
                 singleOrders: singleOrder ? singleOrder.count : 0,
                 bulkOrders: bulkOrder ? bulkOrder.count : 0
-            };
+            });
         });
+
+        // Generate complete date range and fill missing dates with zeros
+        const formattedData = [];
+        const currentDate = new Date(actualStartDate);
+        
+        while (currentDate <= actualEndDate) {
+            let dateKey;
+            
+            switch (groupBy) {
+                case 'day':
+                    dateKey = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                    break;
+                case 'week':
+                    const year = currentDate.getFullYear();
+                    const week = getWeekNumber(currentDate);
+                    dateKey = `${year}-${week.toString().padStart(2, '0')}`;
+                    break;
+                case 'month':
+                    dateKey = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                    break;
+                case 'year':
+                    dateKey = currentDate.getFullYear().toString();
+                    break;
+                default:
+                    dateKey = currentDate.toISOString().split('T')[0];
+            }
+            
+            // Add data for this date (existing or zero)
+            if (dataMap.has(dateKey)) {
+                formattedData.push(dataMap.get(dateKey));
+            } else {
+                formattedData.push({
+                    date: dateKey,
+                    totalOrders: 0,
+                    singleOrders: 0,
+                    bulkOrders: 0
+                });
+            }
+            
+            // Move to next period
+            switch (groupBy) {
+                case 'day':
+                    currentDate.setDate(currentDate.getDate() + 1);
+                    break;
+                case 'week':
+                    currentDate.setDate(currentDate.getDate() + 7);
+                    break;
+                case 'month':
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                    break;
+                case 'year':
+                    currentDate.setFullYear(currentDate.getFullYear() + 1);
+                    break;
+                default:
+                    currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
 
         res.status(200).json({
             success: true,
@@ -132,6 +196,15 @@ const getOrderGraphData = async (req, res) => {
         });
     }
 };
+
+// Helper function to get week number
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
 
 module.exports={
     getDashboardStats,
