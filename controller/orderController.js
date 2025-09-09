@@ -51,7 +51,7 @@ const getOrderbyid = async (req, res) => {
 
 const addOrder = async (req, res) => {
     try {
-      let { ornamentDetails, userid, orderdate, ordertype } = req.body;
+      let { ornamentDetails, userid, orderdate, ordertype,orderpriority } = req.body;
   
       if (typeof ornamentDetails === 'string') {
         ornamentDetails = JSON.parse(ornamentDetails);
