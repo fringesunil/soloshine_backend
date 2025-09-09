@@ -94,7 +94,7 @@ const addOrder = async (req, res) => {
       ordertype,
       orderno,
       ornamentdetails: ornamentDetails,
-     
+     orderpriority,
     });
   
       await order.save();

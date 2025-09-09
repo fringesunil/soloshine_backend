@@ -22,6 +22,11 @@ const orderSchema = new mongoose.Schema({
         default: 'Pending'
     },
     remark: String,
+    orderpriority: {
+        type: String,
+        enum: ["Regular","Urgent"],
+        default: 'Regular'
+    },
     ornamentdetails: [
         {
             name: {
