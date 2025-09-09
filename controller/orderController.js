@@ -93,7 +93,10 @@ const addOrder = async (req, res) => {
       orderdate,
       ordertype,
       orderno,
-      ornamentdetails: ornamentDetails
+      ornamentdetails: ornamentDetails,
+      colorstone,
+      rhodium,
+      dull
     });
   
       await order.save();
@@ -163,6 +166,9 @@ const updateOrder = async (req, res) => {
         if (ordertype !== undefined) updateData.ordertype = ordertype;
         if (status !== undefined) updateData.status = status;
         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
+        if (colorstone !== undefined) updateData.colorstone = colorstone;
+        if (rhodium !== undefined) updateData.rhodium = rhodium;
+        if (dull !== undefined) updateData.dull = dull;
 
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,

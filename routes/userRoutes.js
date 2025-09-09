@@ -9,7 +9,7 @@ router.get('/', authenticateToken,getAlluser);
 
 router.get('/:userid',authenticateToken, getUserbyid);
 
-router.post('/',authenticateToken,checkAdmin, addUser);
+router.post('/', addUser);
 
 router.patch('/:userid',authenticateToken,checkAdmin, updateUser);
 
