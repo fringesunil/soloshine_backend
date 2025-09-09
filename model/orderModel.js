@@ -28,6 +28,15 @@ const orderSchema = new mongoose.Schema({
                 type: mongoose.ObjectId,
                 ref: "Category",
                 required: true
+
+            },
+            size: {
+                type: String,
+                required: true,
+            },
+            unit: {
+                type: String,
+                required: true,
             },
             colorstone: {
                 type: String,
