@@ -117,7 +117,7 @@ const addOrder = async (req, res) => {
 
 const updateOrder = async (req, res) => {
     try {
-        let { ornamentDetails, userid, orderdate, ordertype, status } = req.body;
+        let { ornamentDetails, userid, orderdate, ordertype, status,orderpriority } = req.body;
 
         if (typeof ornamentDetails === 'string') {
             ornamentDetails = JSON.parse(ornamentDetails);
@@ -163,6 +163,7 @@ const updateOrder = async (req, res) => {
         if (orderdate !== undefined) updateData.orderdate = orderdate;
         if (ordertype !== undefined) updateData.ordertype = ordertype;
         if (status !== undefined) updateData.status = status;
+         if (orderpriority !== undefined) updateData.orderpriority = orderpriority;
         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
       
 
