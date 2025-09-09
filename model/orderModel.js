@@ -11,6 +11,21 @@ const orderSchema = new mongoose.Schema({
         enum: ["Single", "Bulk"],
         default: "Single"
     },
+    colorstone: {
+        type: String,
+        enum: ["Red", "Blue", "Green", "Black", "White","Same as image"],
+        default: "Same as image"
+    },
+    rhodium : {
+        type: String,
+        enum: ["Setting Rhodium", "Ganga Jamuna", "No Rhodium", "Same as image"],
+        default: "Same as image"
+    },
+    dull : {
+        type: String,
+        enum: ["Dull", "No Dull", "Same as image"],
+        default: "Same as image"
+    },
     orderno:{
         type:String,
         unique:true
