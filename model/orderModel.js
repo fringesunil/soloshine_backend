@@ -64,7 +64,7 @@ const orderSchema = new mongoose.Schema({
             purity: {
                 type: String,
                 required: true,
-                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold', 'Other']
+                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold', 'Other','22K']
             },
             quantity: {
                 type: Number,
