@@ -210,11 +210,11 @@ const updateOrder = async (req, res) => {
             });
         }
 
-        if (!status || !['Pending', 'In Progress', 'Completed', 'Cancelled'].includes(status)) {
+        if (!status || !['Pending', 'In Progress', 'Completed', 'Cancelled','Due','Delay'].includes(status)) {
             return res.status(400).json({
                 success: false,
                 data: null,
-                message: "Valid status is required (Pending, In Progress, Completed, Cancelled)"
+                message: "Valid status is required (Pending, In Progress, Completed, Cancelled, Due, Delay)"
             });
         }
 
