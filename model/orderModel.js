@@ -24,7 +24,7 @@ const orderSchema = new mongoose.Schema({
     orderpriority: {
         type: String,
         enum: ["Regular","Urgent"],
-        default: 'Regular'
+        default: 'Regular'  
     },
     ornamentdetails: [
         {
