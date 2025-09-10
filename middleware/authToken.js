@@ -12,6 +12,8 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
+    // Attach decoded user to request
+    req.user = user;
     next();
   });
 };
@@ -30,6 +32,8 @@ if (!tokenVerified) {
 if(tokenVerified.role !=="admin"){
     return res.status(401).json({ success: false, message: "user not autherized" });
 }
+ // Attach decoded user to request for downstream handlers
+ req.user = tokenVerified;
 next();
   
 };

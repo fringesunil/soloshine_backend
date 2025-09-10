@@ -16,6 +16,10 @@ const orderSchema = new mongoose.Schema({
         type:String,
         unique:true
     },
+    updatedby:{
+        type:mongoose.ObjectId,
+        ref:"User"
+    },
     status: {
         type: String,
         enum: ['Pending', 'In Progress', 'Completed', 'Cancelled','Due','Delay'],

@@ -3,7 +3,10 @@ const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
 
 const getAllOrder = async (req, res) => {
     try {
-        const order = await Order.find(req.query).populate('userid','-password').populate({path:'ornamentdetails.name',
+        const order = await Order.find(req.query)
+            .populate('userid','-password')
+            .populate('updatedby','-password')
+            .populate({path:'ornamentdetails.name',
             model:'Category'
         }).exec();
         res.status(200).json({
@@ -23,7 +26,10 @@ const getAllOrder = async (req, res) => {
 
 const getOrderbyid = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.orderid).populate('userid','-password').populate({path:'ornamentdetails.name',
+        const order = await Order.findById(req.params.orderid)
+            .populate('userid','-password')
+            .populate('updatedby','-password')
+            .populate({path:'ornamentdetails.name',
             model:'Category'
         }).exec();
         if (!order) {
@@ -51,7 +57,7 @@ const getOrderbyid = async (req, res) => {
 
 const addOrder = async (req, res) => {
     try {
-      let { ornamentDetails, userid, orderdate, ordertype } = req.body;
+      let { ornamentDetails, userid, orderdate, ordertype,updatedby } = req.body;
   
       if (typeof ornamentDetails === 'string') {
         ornamentDetails = JSON.parse(ornamentDetails);
@@ -93,6 +99,7 @@ const addOrder = async (req, res) => {
       orderdate,
       ordertype,
       orderno,
+      updatedby,
       ornamentdetails: ornamentDetails,
      orderpriority,
     });
@@ -117,7 +124,7 @@ const addOrder = async (req, res) => {
 
 const updateOrder = async (req, res) => {
     try {
-        let { ornamentDetails, userid, orderdate, ordertype, status } = req.body;
+        let { ornamentDetails, userid, orderdate, ordertype, status,updatedby } = req.body;
 
         if (typeof ornamentDetails === 'string') {
             ornamentDetails = JSON.parse(ornamentDetails);
@@ -164,6 +171,7 @@ const updateOrder = async (req, res) => {
         if (ordertype !== undefined) updateData.ordertype = ordertype;
         if (status !== undefined) updateData.status = status;
         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
+        if (updatedby !== undefined) updateData.updatedby = updatedby;
       
 
         const updatedOrder = await Order.findByIdAndUpdate(
@@ -199,7 +207,7 @@ const updateOrder = async (req, res) => {
 
   const updateOrderStatusBulk = async (req, res) => {
     try {
-        const { orderIds, status } = req.body;
+        const { orderIds, status, updatedby } = req.body;
 
         if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
             return res.status(400).json({
@@ -217,9 +225,15 @@ const updateOrder = async (req, res) => {
             });
         }
 
+        // Build update fields, include updatedby if provided
+        const updateFields = { status };
+        if (updatedby !== undefined && updatedby !== null) {
+            updateFields.updatedby = updatedby;
+        }
+
         const result = await Order.updateMany(
             { _id: { $in: orderIds } },
-            { $set: { status } },
+            { $set: updateFields },
             { new: true }
         );
 
@@ -237,6 +251,7 @@ const updateOrder = async (req, res) => {
                 modifiedCount: result.modifiedCount,
                 matchedCount: result.matchedCount
             },
+            
             message: "Order statuses updated successfully"
         });
 
