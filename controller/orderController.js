@@ -1,5 +1,6 @@
 const Order = require("../model/orderModel");
 const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
+const { sendNotificationToRoles } = require("../utlis/notification");
 
 const getAllOrder = async (req, res) => {
     try {
@@ -98,7 +99,15 @@ const addOrder = async (req, res) => {
     });
   
       await order.save();
-  
+
+      // Fire and forget push notifications to admin and employees
+      try {
+        const title = "New order created";
+        const body = `Order #${orderno} (${ordertype}) was created`;
+        const data = { orderId: String(order._id), orderno: String(orderno), ordertype: String(ordertype) };
+        sendNotificationToRoles(['admin','employee'], title, body, data).catch(()=>{});
+      } catch (_) {}
+
       res.status(200).json({
         success: true,
         data: order,
