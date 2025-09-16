@@ -26,7 +26,10 @@ const userSchema = new mongoose.Schema({
     address: {
         type: String,
     },
-
+    fcmtoken: {
+        type: String,
+        default:""
+    },
 }, {
     timestamps: true
 });

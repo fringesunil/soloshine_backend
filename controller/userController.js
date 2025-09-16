@@ -113,7 +113,8 @@ const getUserbyid = async (req, res) => {
         email: updateuser.email,
         phone: updateuser.phone,
         role: updateuser.role,
-        address: updateuser.address
+        address: updateuser.address,
+        fcmtoken: updateuser.fcmtoken
       };
       res.status(200).json({
         success: true,
