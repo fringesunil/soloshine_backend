@@ -11,7 +11,8 @@ const getAlluser = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        address: user.address
+        address: user.address,
+        fcmtoken: user.fcmtoken
       }));
       res.status(200).json({
         success: true,
@@ -44,7 +45,8 @@ const getUserbyid = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        address: user.address
+        address: user.address,
+         fcmtoken: user.fcmtoken
       };
       res.status(200).json({
         success: true,
@@ -83,7 +85,8 @@ const getUserbyid = async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        address: user.address
+        address: user.address,
+        fcmtoken: user.fcmtoken
       };
     
      res.status(200).json({
