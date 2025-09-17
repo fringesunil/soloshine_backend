@@ -11,7 +11,7 @@ router.get('/:userid',authenticateToken, getUserbyid);
 
 router.post('/', addUser);
 
-router.patch('/:userid',authenticateToken,checkAdmin, updateUser);
+router.patch('/:userid',authenticateToken, updateUser);
 
 router.delete('/:userid',authenticateToken,checkAdmin, deleteUser);
 
