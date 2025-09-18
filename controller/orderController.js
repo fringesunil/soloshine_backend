@@ -1,6 +1,7 @@
 const Order = require("../model/orderModel");
 const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
 const { sendNotificationToRoles } = require("../utlis/notification");
+const { getNextSequence } = require("../utlis/sequence");
 
 const getAllOrder = async (req, res) => {
     try {
@@ -76,78 +77,66 @@ const getOrderbyid = async (req, res) => {
 }
 
 const addOrder = async (req, res) => {
-    try {
-      let { ornamentDetails, userid, orderdate, ordertype,orderpriority } = req.body;
-  
-      if (typeof ornamentDetails === 'string') {
-        ornamentDetails = JSON.parse(ornamentDetails);
-      }
-      if(req.files){
+  try {
+    let { ornamentDetails, userid, orderdate, ordertype, orderpriority } = req.body;
+
+    if (typeof ornamentDetails === 'string') {
+      ornamentDetails = JSON.parse(ornamentDetails);
+    }
+
+    if (req.files) {
       for (let i = 0; i < ornamentDetails.length; i++) {
         const fieldName = `image${i}`;
         const filesForItem = req.files.filter(file => file.fieldname === fieldName);
-  
+
         const uploadedUrls = await Promise.all(
           filesForItem.map(file => imageUploadimgbb(file.path))
         );
-  
+
         ornamentDetails[i].image = uploadedUrls;
       }
-      }
-       let orderno;
-    let isUnique = false;
-    let attempts = 0;
-    const maxAttempts = 5;
-     while (!isUnique && attempts < maxAttempts) {
-      const randomNum = Math.floor(100000 + Math.random() * 900000);
-      orderno = ordertype === 'Bulk' ? randomNum.toString() : `BK${randomNum}`;
-      const existingOrder = await Order.findOne({ orderno });
-      if (!existingOrder) {
-        isUnique = true;
-      }
-      attempts++;
     }
-    if (!isUnique) {
-      return res.status(409).json({
-        success: false,
-        data: [],
-        message: "Unable to generate a unique order number, please try again later"
-      });
-    }
+
+    const seq = await getNextSequence('order');
+    console.log(`value============>${seq}`)
+    const length = String(seq).length;
+    const totalLength = length < 4 ? 4 : length; 
+    let orderno = String(seq).padStart(totalLength, '0');
+    orderno = ordertype === 'Bulk' ? orderno : `BK${orderno}`;
+
     const order = new Order({
       userid,
       orderdate,
       ordertype,
       orderno,
       ornamentdetails: ornamentDetails,
-     orderpriority,
+      orderpriority,
     });
-  
-      await order.save();
 
-      // Fire and forget push notifications to admin and employees
-      try {
-        const title = "New order created";
-        const body = `Order #${orderno} (${ordertype}) was created`;
-        const data = { orderId: String(order._id), orderno: String(orderno), ordertype: String(ordertype) };
-        sendNotificationToRoles(['admin','employee'], title, body, data).catch(()=>{});
-      } catch (_) {}
+    await order.save();
+    try {
+      const title = "New order created";
+      const body = `Order #${orderno} (${ordertype}) was created`;
+      const data = { orderId: String(order._id), orderno: String(orderno), ordertype: String(ordertype) };
+      sendNotificationToRoles(['admin', 'employee'], title, body, data).catch(() => {});
+    } catch (_) {}
 
-      res.status(200).json({
-        success: true,
-        data: order,
-        message: "Order Added successfully"
-      });
-  
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        data: null,
-        message: "Server error",
-        error: error.message
-      });
-    }
-  };
+    res.status(200).json({
+      success: true,
+      data: order,
+      message: "Order Added successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
 
 const updateOrder = async (req, res) => {
     try {
