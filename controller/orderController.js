@@ -4,9 +4,32 @@ const { sendNotificationToRoles } = require("../utlis/notification");
 
 const getAllOrder = async (req, res) => {
     try {
-        const order = await Order.find(req.query).populate('userid','-password').populate({path:'ornamentdetails.name',
-            model:'Category'
-        }).exec();
+        const { startDate, endDate, ...otherFilters } = req.query;
+
+        let filter = { ...otherFilters };
+        if (startDate && endDate) {
+            filter.orderdate = {
+                $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)),   
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)) 
+            };
+        } else if (startDate) {
+            filter.orderdate = { 
+                $gte: new Date(new Date(startDate).setHours(0, 0, 0, 0)) 
+            };
+        } else if (endDate) {
+            filter.orderdate = { 
+                $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999)) 
+            };
+        }
+
+        const order = await Order.find(filter)
+            .populate('userid', '-password')
+            .populate({
+                path: 'ornamentdetails.name',
+                model: 'Category'
+            })
+            .exec();
+
         res.status(200).json({
             success: true,
             data: order,
@@ -20,7 +43,9 @@ const getAllOrder = async (req, res) => {
             error: error.message
         });
     }
-}
+};
+
+
 
 const getOrderbyid = async (req, res) => {
     try {
