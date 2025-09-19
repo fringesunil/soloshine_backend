@@ -11,20 +11,21 @@ const orderSchema = new mongoose.Schema({
         enum: ["Single", "Bulk"],
         default: "Single"
     },
-    
-    orderno:{
-        type:String,
-        unique:true
+
+    orderno: {
+        type: String,
+        unique: true
     },
     status: {
         type: String,
-        enum: ['Pending', 'In Progress', 'Completed', 'Cancelled','Due','Delay'],
+        enum: ['Pending', 'In Progress', 'Completed', 'Cancelled', 'Due', 'Delay', 'Partial Delivery'],
         default: 'Pending'
     },
+
     orderpriority: {
         type: String,
-        enum: ["Regular","Urgent"],
-        default: 'Regular'  
+        enum: ["Regular", "Urgent"],
+        default: 'Regular'
     },
     ornamentdetails: [
         {
@@ -44,18 +45,18 @@ const orderSchema = new mongoose.Schema({
             },
             colorstone: {
                 type: String,
-                enum: ["Red", "Blue", "Green", "Black", "White","Same as image"],
-                default: "Same as image"
+                enum: ["Red", "Blue", "Green", "Black", "White", "Same as image", ""],
+                default: ""
             },
-            rhodium : {
+            rhodium: {
                 type: String,
-                enum: ["Setting Rhodium", "Ganga Jamuna", "No Rhodium", "Same as image"],
-                default: "Same as image"
+                enum: ["Setting Rhodium", "Ganga Jamuna", "No Rhodium", "Same as image", ""],
+                default: ""
             },
-            dull : {
+            dull: {
                 type: String,
-                enum: ["Dull", "No Dull", "Same as image"],
-                default: "Same as image"
+                enum: ["Dull", "No Dull", "Same as image", ""],
+                default: ""
             },
             weight: {
                 type: Number,
@@ -64,11 +65,15 @@ const orderSchema = new mongoose.Schema({
             purity: {
                 type: String,
                 required: true,
-                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold', 'Other','22k']
+                enum: ['18K Yellow gold', '18K Rose gold', '18K White gold', 'Other', '22k']
             },
             quantity: {
                 type: Number,
                 required: true,
+            },
+            deliverycount: {
+                type: Number,
+
             },
             remarks: {
                 type: String,
