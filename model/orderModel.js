@@ -60,7 +60,7 @@ const orderSchema = new mongoose.Schema({
             },
             weight: {
                 type: Number,
-                required: true,
+                required: false,
             },
             purity: {
                 type: String,
