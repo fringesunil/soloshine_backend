@@ -81,6 +81,18 @@ const orderSchema = new mongoose.Schema({
             image: [String]
         }
     ],
+    partyname: {
+        type: mongoose.ObjectId,
+        ref: "User",
+    },
+    updatedby: {
+        type: mongoose.ObjectId,
+        ref: "User",
+        default: null
+
+    }, 
+}, {
+    timestamps: true
 });
 
 

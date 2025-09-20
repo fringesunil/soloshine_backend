@@ -28,7 +28,7 @@ const getAllOrder = async (req, res) => {
             .populate({
                 path: 'ornamentdetails.name',
                 model: 'Category'
-            })
+            }).populate('partyname',"_id name").populate('updatedby',"_id name")
             .exec();
 
         res.status(200).json({
@@ -52,7 +52,7 @@ const getOrderbyid = async (req, res) => {
     try {
         const order = await Order.findById(req.params.orderid).populate('userid','-password').populate({path:'ornamentdetails.name',
             model:'Category'
-        }).exec();
+        }).populate('partyname',"_id name").populate('updatedby',"_id name").exec();
         if (!order) {
             return res.status(404).json({
                 success: false,
@@ -78,7 +78,7 @@ const getOrderbyid = async (req, res) => {
 
 const addOrder = async (req, res) => {
   try {
-    let { ornamentDetails, userid, orderdate, ordertype, orderpriority } = req.body;
+    let { ornamentDetails, userid, orderdate, ordertype, orderpriority,partyname } = req.body;
 
     if (typeof ornamentDetails === 'string') {
       ornamentDetails = JSON.parse(ornamentDetails);
@@ -98,7 +98,6 @@ const addOrder = async (req, res) => {
     }
 
     const seq = await getNextSequence('order');
-    console.log(`value============>${seq}`)
     const length = String(seq).length;
     const totalLength = length < 4 ? 4 : length; 
     let orderno = String(seq).padStart(totalLength, '0');
@@ -111,6 +110,7 @@ const addOrder = async (req, res) => {
       orderno,
       ornamentdetails: ornamentDetails,
       orderpriority,
+      partyname
     });
 
     await order.save();
@@ -140,7 +140,7 @@ const addOrder = async (req, res) => {
 
 const updateOrder = async (req, res) => {
     try {
-        let { ornamentDetails, userid, orderdate, ordertype, status,orderpriority } = req.body;
+        let { ornamentDetails, userid, orderdate, ordertype, status,orderpriority,partyname,updatedby } = req.body;
 
         if (typeof ornamentDetails === 'string') {
             ornamentDetails = JSON.parse(ornamentDetails);
@@ -188,7 +188,9 @@ const updateOrder = async (req, res) => {
         if (status !== undefined) updateData.status = status;
          if (orderpriority !== undefined) updateData.orderpriority = orderpriority;
         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
-      
+         if (partyname !== undefined) updateData.partyname = partyname;
+          if (updatedby !== undefined) updateData.updatedby = updatedby;
+        updateData.updatedat=Date;
 
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,
