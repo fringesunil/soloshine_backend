@@ -1,4 +1,5 @@
 const Order = require("../model/orderModel");
+const User = require("../model/userModel");
 const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
 const { sendNotificationToRoles } = require("../utlis/notification");
 const { getNextSequence } = require("../utlis/sequence");
@@ -115,9 +116,16 @@ const addOrder = async (req, res) => {
 
     await order.save();
     try {
+        const user = await User.findById(userid).select("name email"); 
+
       const title = "New order created";
-      const body = `Order #${orderno} (${ordertype}) was created`;
-      const data = { orderId: String(order._id), orderno: String(orderno), ordertype: String(ordertype) };
+       const body = `Order #${orderno} (${ordertype}) was created by ${user?.name || 'Unknown User'}`;
+      const data = { 
+        orderId: String(order._id), 
+        orderno: String(orderno), 
+        ordertype: String(ordertype), 
+        createdBy: user?.name || 'Unknown User' 
+      };
       sendNotificationToRoles(['admin', 'employee'], title, body, data).catch(() => {});
     } catch (_) {}
 
@@ -196,6 +204,27 @@ const updateOrder = async (req, res) => {
             { $set: updateData },
             { new: true }
         );
+         try {
+            const updaterId = updatedby || updatedOrder.updatedby || null;
+            const updater = updaterId ? await User.findById(updaterId).select("name email") : null;
+            const title = "Order updated";
+            let body = `Order #${updatedOrder.orderno} was updated`;
+            if (status) {
+                body += ` — status changed to ${status}`;
+            }
+            if (updater?.name) {
+                body += ` by ${updater.name}`;
+            }
+
+            const data = {
+                orderId: String(updatedOrder._id),
+                orderno: String(updatedOrder.orderno),
+                updatedBy: updater?.name || 'Unknown User',
+                status: updatedOrder.status || ''
+            };
+            sendNotificationToRoles(['admin', 'employee'], title, body, data).catch(() => { });
+        } catch (notifErr) {
+        }
 
         res.status(200).json({
             success: true,
