@@ -190,7 +190,6 @@ const updateOrder = async (req, res) => {
         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
          if (partyname !== undefined) updateData.partyname = partyname;
           if (updatedby !== undefined) updateData.updatedby = updatedby;
-        updateData.updatedat=Date;
 
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,
