@@ -37,11 +37,11 @@ const orderSchema = new mongoose.Schema({
             },
             size: {
                 type: String,
-                required: true,
+                required: false,
             },
             unit: {
                 type: String,
-                required: true,
+                required: false,
             },
             colorstone: {
                 type: String,
