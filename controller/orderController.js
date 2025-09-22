@@ -253,7 +253,7 @@ const updateOrder = async (req, res) => {
 
   const updateOrderStatusBulk = async (req, res) => {
     try {
-        const { orderIds, status } = req.body;
+        const { orderIds, status,updatedby } = req.body;
 
         if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
             return res.status(400).json({
@@ -273,7 +273,9 @@ const updateOrder = async (req, res) => {
 
         const result = await Order.updateMany(
             { _id: { $in: orderIds } },
-            { $set: { status } },
+            { $set: { status,
+                 updatedby: updatedby, 
+             } },
             { new: true }
         );
 
