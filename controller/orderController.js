@@ -80,7 +80,7 @@ const getOrderbyid = async (req, res) => {
 
 const addOrder = async (req, res) => {
   try {
-    let { ornamentDetails, userid, orderdate, ordertype, orderpriority,partyname } = req.body;
+    let { ornamentDetails, userid, orderdate, ordertype, orderpriority,partyname,orderno } = req.body;
 
     if (typeof ornamentDetails === 'string') {
       ornamentDetails = JSON.parse(ornamentDetails);
@@ -103,8 +103,8 @@ const addOrder = async (req, res) => {
     const seq = await getNextSequence('order');
     const length = String(seq).length;
     const totalLength = length < 4 ? 4 : length; 
-    let orderno = String(seq).padStart(totalLength, '0');
-    orderno = ordertype === 'Bulk' ? orderno : `BK${orderno}`;
+    let ordernos = String(seq).padStart(totalLength, '0');
+    orderno = ordertype === 'Bulk' ? orderno : `BK${ordernos}`;
 
     const order = new Order({
       userid,
