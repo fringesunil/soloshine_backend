@@ -1,6 +1,7 @@
 const Order = require("../model/orderModel");
 const User = require("../model/userModel");
 const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
+const { uploadFileToSupabase } = require("../utlis/supabase");
 const { sendNotificationToRoles } = require("../utlis/notification");
 const { getNextSequence } = require("../utlis/sequence");
 
@@ -87,14 +88,15 @@ const addOrder = async (req, res) => {
 
     if (req.files) {
       for (let i = 0; i < ornamentDetails.length; i++) {
-        const fieldName = `image${i}`;
-        const filesForItem = req.files.filter(file => file.fieldname === fieldName);
+        const imageFieldName = `image${i}`;
+        const imageFilesForItem = req.files.filter(file => file.fieldname === imageFieldName);
 
-        const uploadedUrls = await Promise.all(
-          filesForItem.map(file => imageUploadimgbb(file.path))
-        );
-
-        ornamentDetails[i].image = uploadedUrls;
+        if (imageFilesForItem.length > 0) {
+          const uploadedUrls = await Promise.all(
+            imageFilesForItem.map(file => uploadFileToSupabase(file.path, { fileName: file.originalname }))
+          );
+          ornamentDetails[i].image = uploadedUrls;
+        }
       }
     }
 
@@ -167,22 +169,19 @@ const updateOrder = async (req, res) => {
         
         if (ornamentDetails && req.files && req.files.length > 0) {
             for (let i = 0; i < ornamentDetails.length; i++) {
-                const fieldName = `image${i}`;
-                const filesForItem = req.files.filter(file => file.fieldname === fieldName);
+                const imageFieldName = `image${i}`;
+                const imageFilesForItem = req.files.filter(file => file.fieldname === imageFieldName);
 
-                if (filesForItem.length > 0) {
-                   
+                if (imageFilesForItem.length > 0) {
                     const uploadedUrls = await Promise.all(
-                        filesForItem.map(file => imageUploadimgbb(file.path))
+                        imageFilesForItem.map(file => uploadFileToSupabase(file.path, { fileName: file.originalname }))
                     );
                     ornamentDetails[i].image = uploadedUrls;
                 } else {
-                    
                     ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
                 }
             }
         } else if (ornamentDetails) {
-           
             for (let i = 0; i < ornamentDetails.length; i++) {
                 ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
             }
