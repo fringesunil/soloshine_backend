@@ -148,15 +148,111 @@ const addOrder = async (req, res) => {
 };
 
 
+// const updateOrder = async (req, res) => {
+//     try {
+//         let { ornamentDetails, userid, orderdate, ordertype, status,orderpriority,partyname,updatedby } = req.body;
+
+//         if (typeof ornamentDetails === 'string') {
+//             ornamentDetails = JSON.parse(ornamentDetails);
+//         }
+
+       
+//         const existingOrder = await Order.findById(req.params.orderid);
+//         if (!existingOrder) {
+//             return res.status(404).json({
+//                 success: false,
+//                 data: null,
+//                 message: "Order not found"
+//             });
+//         }
+
+        
+//         if (ornamentDetails && req.files && req.files.length > 0) {
+//             for (let i = 0; i < ornamentDetails.length; i++) {
+//                 const imageFieldName = `image${i}`;
+//                 const imageFilesForItem = req.files.filter(file => file.fieldname === imageFieldName);
+
+//                 if (imageFilesForItem.length > 0) {
+//                     const uploadedUrls = await Promise.all(
+//                         imageFilesForItem.map(file => uploadFileToSupabase(file.path, { fileName: file.originalname }))
+//                     );
+//                     ornamentDetails[i].image = uploadedUrls;
+//                 } else {
+//                     ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
+//                 }
+//             }
+//         } else if (ornamentDetails) {
+//             for (let i = 0; i < ornamentDetails.length; i++) {
+//                 ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
+//             }
+//         }
+
+        
+//         const updateData = {};
+//         if (userid !== undefined) updateData.userid = userid;
+//         if (orderdate !== undefined) updateData.orderdate = orderdate;
+//         if (ordertype !== undefined) updateData.ordertype = ordertype;
+//         if (status !== undefined) updateData.status = status;
+//          if (orderpriority !== undefined) updateData.orderpriority = orderpriority;
+//         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
+//          if (partyname !== undefined) updateData.partyname = partyname;
+//           if (updatedby !== undefined) updateData.updatedby = updatedby;
+
+//         const updatedOrder = await Order.findByIdAndUpdate(
+//             req.params.orderid,
+//             { $set: updateData },
+//             { new: true }
+//         );
+//          try {
+//             const updaterId = updatedby || updatedOrder.updatedby || null;
+//             const updater = updaterId ? await User.findById(updaterId).select("name email") : null;
+//             const title = "Order updated";
+//             let body = `Order #${updatedOrder.orderno} was updated`;
+//             if (status) {
+//                 body += ` — status changed to ${status}`;
+//             }
+//             if (updater?.name) {
+//                 body += ` by ${updater.name}`;
+//             }
+
+//             const data = {
+//                 orderId: String(updatedOrder._id),
+//                 orderno: String(updatedOrder.orderno),
+//                 updatedBy: updater?.name || 'Unknown User',
+//                 status: updatedOrder.status || ''
+//             };
+//             sendNotificationToRoles(['admin', 'employee'], title, body, data).catch(() => { });
+//         } catch (notifErr) {
+//         }
+
+//         res.status(200).json({
+//             success: true,
+//             data: updatedOrder,
+//             message: "Order Updated successfully"
+//         });
+
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             data: null,
+//             message: "Server error",
+//             error: error.message
+//         });
+//     }
+// };
+
+
+
+
+
 const updateOrder = async (req, res) => {
     try {
-        let { ornamentDetails, userid, orderdate, ordertype, status,orderpriority,partyname,updatedby } = req.body;
+        let { ornamentDetails, userid, orderdate, ordertype, status, orderpriority, partyname, updatedby } = req.body;
 
         if (typeof ornamentDetails === 'string') {
             ornamentDetails = JSON.parse(ornamentDetails);
         }
 
-       
         const existingOrder = await Order.findById(req.params.orderid);
         if (!existingOrder) {
             return res.status(404).json({
@@ -166,7 +262,26 @@ const updateOrder = async (req, res) => {
             });
         }
 
-        
+        // Determine what the status will be after update
+        const newStatus = (status !== undefined && status !== null) ? status : existingOrder.status;
+
+        // If ornamentDetails present, check for partialdelivery entries
+        if (ornamentDetails && Array.isArray(ornamentDetails)) {
+            // If any ornament item contains partialdelivery and the newStatus is not "Partial Delivery", reject
+            const hasPartialDeliveryInPayload = ornamentDetails.some(item =>
+                item && item.partialdelivery && Array.isArray(item.partialdelivery) && item.partialdelivery.length > 0
+            );
+
+            if (hasPartialDeliveryInPayload && newStatus !== 'Partial Delivery') {
+                return res.status(400).json({
+                    success: false,
+                    data: null,
+                    message: "Cannot add partialdelivery unless order status is 'Partial Delivery'. Set status to 'Partial Delivery' to add partialdelivery."
+                });
+            }
+        }
+
+        // Handle images: if images are uploaded map them to respective ornament items
         if (ornamentDetails && req.files && req.files.length > 0) {
             for (let i = 0; i < ornamentDetails.length; i++) {
                 const imageFieldName = `image${i}`;
@@ -187,23 +302,26 @@ const updateOrder = async (req, res) => {
             }
         }
 
-        
+        // Build update object
         const updateData = {};
         if (userid !== undefined) updateData.userid = userid;
         if (orderdate !== undefined) updateData.orderdate = orderdate;
         if (ordertype !== undefined) updateData.ordertype = ordertype;
         if (status !== undefined) updateData.status = status;
-         if (orderpriority !== undefined) updateData.orderpriority = orderpriority;
+        if (orderpriority !== undefined) updateData.orderpriority = orderpriority;
         if (ornamentDetails !== undefined) updateData.ornamentdetails = ornamentDetails;
-         if (partyname !== undefined) updateData.partyname = partyname;
-          if (updatedby !== undefined) updateData.updatedby = updatedby;
+        if (partyname !== undefined) updateData.partyname = partyname;
+        if (updatedby !== undefined) updateData.updatedby = updatedby;
 
+        // Perform update
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,
             { $set: updateData },
             { new: true }
         );
-         try {
+
+        // Send notification (best-effort)
+        try {
             const updaterId = updatedby || updatedOrder.updatedby || null;
             const updater = updaterId ? await User.findById(updaterId).select("name email") : null;
             const title = "Order updated";
@@ -223,6 +341,7 @@ const updateOrder = async (req, res) => {
             };
             sendNotificationToRoles(['admin', 'employee'], title, body, data).catch(() => { });
         } catch (notifErr) {
+            // ignore notification errors
         }
 
         res.status(200).json({
@@ -241,7 +360,8 @@ const updateOrder = async (req, res) => {
     }
 };
 
-   const deleteOrder = async (req, res) => {
+
+const deleteOrder = async (req, res) => {
     await  Order.findByIdAndDelete(req.params.orderid)
     res.status(200).json({
             success: true,

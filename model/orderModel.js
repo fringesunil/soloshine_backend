@@ -75,6 +75,12 @@ const orderSchema = new mongoose.Schema({
                 type: Number,
 
             },
+            partialdelivery:[
+                {
+                    deliverydate:Date,
+                    qty:Number
+                }
+            ],
             remarks: {
                 type: String,
             },
