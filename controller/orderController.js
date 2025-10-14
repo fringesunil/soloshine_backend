@@ -262,12 +262,12 @@ const updateOrder = async (req, res) => {
             });
         }
 
-        // Determine what the status will be after update
+        
         const newStatus = (status !== undefined && status !== null) ? status : existingOrder.status;
 
-        // If ornamentDetails present, check for partialdelivery entries
+      
         if (ornamentDetails && Array.isArray(ornamentDetails)) {
-            // If any ornament item contains partialdelivery and the newStatus is not "Partial Delivery", reject
+           
             const hasPartialDeliveryInPayload = ornamentDetails.some(item =>
                 item && item.partialdelivery && Array.isArray(item.partialdelivery) && item.partialdelivery.length > 0
             );
@@ -281,7 +281,45 @@ const updateOrder = async (req, res) => {
             }
         }
 
-        // Handle images: if images are uploaded map them to respective ornament items
+       
+        if (ornamentDetails && Array.isArray(ornamentDetails)) {
+            for (let i = 0; i < ornamentDetails.length; i++) {
+                const currentItem = ornamentDetails[i];
+                const existingItem = existingOrder.ornamentdetails[i];
+                
+                if (currentItem.partialdelivery && Array.isArray(currentItem.partialdelivery)) {
+                    const existingPartialDelivery = existingItem?.partialdelivery || [];
+                    
+                   
+                    currentItem.partialdelivery.forEach(newEntry => {
+                       
+                        const existingEntryIndex = existingPartialDelivery.findIndex(existing => 
+                            existing.deliverydate && newEntry.deliverydate &&
+                            new Date(existing.deliverydate).getTime() === new Date(newEntry.deliverydate).getTime()
+                        );
+                        
+                        if (existingEntryIndex !== -1) {
+                          
+                            existingPartialDelivery[existingEntryIndex].qty = newEntry.qty;
+                        } else {
+                          
+                            existingPartialDelivery.push({
+                                deliverydate: newEntry.deliverydate,
+                                qty: newEntry.qty
+                            });
+                        }
+                    });
+                    
+                   
+                    currentItem.partialdelivery = existingPartialDelivery;
+                } else if (existingItem?.partialdelivery) {
+                   
+                    currentItem.partialdelivery = existingItem.partialdelivery;
+                }
+            }
+        }
+
+       
         if (ornamentDetails && req.files && req.files.length > 0) {
             for (let i = 0; i < ornamentDetails.length; i++) {
                 const imageFieldName = `image${i}`;
@@ -302,7 +340,7 @@ const updateOrder = async (req, res) => {
             }
         }
 
-        // Build update object
+       
         const updateData = {};
         if (userid !== undefined) updateData.userid = userid;
         if (orderdate !== undefined) updateData.orderdate = orderdate;
@@ -313,14 +351,14 @@ const updateOrder = async (req, res) => {
         if (partyname !== undefined) updateData.partyname = partyname;
         if (updatedby !== undefined) updateData.updatedby = updatedby;
 
-        // Perform update
+       
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,
             { $set: updateData },
             { new: true }
         );
 
-        // Send notification (best-effort)
+      
         try {
             const updaterId = updatedby || updatedOrder.updatedby || null;
             const updater = updaterId ? await User.findById(updaterId).select("name email") : null;
@@ -341,7 +379,7 @@ const updateOrder = async (req, res) => {
             };
             sendNotificationToRoles(['admin', 'employee'], title, body, data).catch(() => { });
         } catch (notifErr) {
-            // ignore notification errors
+          
         }
 
         res.status(200).json({
