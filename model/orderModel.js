@@ -45,7 +45,7 @@ const orderSchema = new mongoose.Schema({
             },
             colorstone: {
                 type: String,
-                enum: ["Red", "Blue", "Green", "Black", "White", "Same as image", ""],
+                enum: ["Red", "Blue", "Green", "Black", "White", "Same as image","Others", ""],
                 default: ""
             },
             rhodium: {
@@ -78,7 +78,8 @@ const orderSchema = new mongoose.Schema({
             partialdelivery:[
                 {
                     deliverydate:Date,
-                    qty:Number
+                    qty:Number,
+                    deliverynote:String
                 }
             ],
             remarks: {

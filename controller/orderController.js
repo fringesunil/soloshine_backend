@@ -305,7 +305,8 @@ const updateOrder = async (req, res) => {
                           
                             existingPartialDelivery.push({
                                 deliverydate: newEntry.deliverydate,
-                                qty: newEntry.qty
+                                qty: newEntry.qty,
+                                deliverynote:newEntry.deliverynote
                             });
                         }
                     });
