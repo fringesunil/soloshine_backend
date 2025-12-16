@@ -99,6 +99,15 @@ const addOrder = async (req, res) => {
         }
       }
     }
+    if (ordertype === 'Bulk') {
+          const existingOrder = await Order.findOne({ orderno });
+           if (existingOrder) {
+        return res.status(400).json({
+          success: false,
+          message: "Order number already exists. Please use a different order number."
+        });
+      }
+    }
 
     const seq = await getNextSequence('order');
     const length = String(seq).length;
