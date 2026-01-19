@@ -373,7 +373,6 @@ const updateOrder = async (req, res) => {
         if (updatedby !== undefined) updateData.updatedby = updatedby;
         if (orderno !== undefined) updateData.orderno = orderno;
 
-
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,
             { $set: updateData },
