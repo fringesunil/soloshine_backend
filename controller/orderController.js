@@ -30,7 +30,7 @@ const getAllOrder = async (req, res) => {
             .populate({
                 path: 'ornamentdetails.name',
                 model: 'Category'
-            }).populate('partyname', "_id name").populate('updatedby', "_id name")
+            }).populate('partyname', "_id name").populate('updatedby', "_id name").populate('statushistory.updatedby', '_id name')
             .exec();
 
         res.status(200).json({
@@ -55,7 +55,7 @@ const getOrderbyid = async (req, res) => {
         const order = await Order.findById(req.params.orderid).populate('userid', '-password').populate({
             path: 'ornamentdetails.name',
             model: 'Category'
-        }).populate('partyname', "_id name").populate('updatedby', "_id name").exec();
+        }).populate('partyname', "_id name").populate('updatedby', "_id name").populate('statushistory.updatedby', '_id name').exec();
         if (!order) {
             return res.status(404).json({
                 success: false,
@@ -123,7 +123,12 @@ const addOrder = async (req, res) => {
             orderno,
             ornamentdetails: ornamentDetails,
             orderpriority,
-            partyname
+            partyname,
+            statushistory: [{
+                status: 'Pending',
+                updatedby: userid,
+                updatedAt: new Date()
+            }]
         });
 
         await order.save();
@@ -373,9 +378,20 @@ const updateOrder = async (req, res) => {
         if (updatedby !== undefined) updateData.updatedby = updatedby;
         if (orderno !== undefined) updateData.orderno = orderno;
 
+        const updateQuery = { $set: updateData };
+        if (status !== undefined && status !== existingOrder.status) {
+            updateQuery.$push = {
+                statushistory: {
+                    status: status,
+                    updatedby: updatedby || existingOrder.updatedby || null,
+                    updatedAt: new Date()
+                }
+            };
+        }
+
         const updatedOrder = await Order.findByIdAndUpdate(
             req.params.orderid,
-            { $set: updateData },
+            updateQuery,
             { new: true }
         );
 
@@ -455,6 +471,13 @@ const updateOrderStatusBulk = async (req, res) => {
                 $set: {
                     status,
                     updatedby: updatedby,
+                },
+                $push: {
+                    statushistory: {
+                        status: status,
+                        updatedby: updatedby,
+                        updatedAt: new Date()
+                    }
                 }
             },
             { new: true }

@@ -106,6 +106,40 @@ const deleteFilesFromSupabase = async (fileUrls) => {
         console.error(`File deletion failed: ${e.message}`);
     }
 }
-module.exports = { uploadFileToSupabase, deleteFilesFromSupabase }
+const getSupabaseStorageSize = async (folderPath = '') => {
+    try {
+        if (!supabase || !supabaseBucket) return 0;
+        let totalSize = 0;
+        const { data, error } = await supabase.storage.from(supabaseBucket).list(folderPath, {
+            limit: 100,
+            offset: 0,
+            sortBy: { column: 'name', order: 'asc' },
+        });
+
+        if (error) {
+            console.error("Error listing supabase files:", error);
+            return 0;
+        }
+
+        if (data && data.length > 0) {
+            for (const item of data) {
+                if (item.id === null) {
+                    if (item.name !== '.emptyFolderPlaceholder') {
+                        const folderSize = await getSupabaseStorageSize(folderPath ? `${folderPath}/${item.name}` : item.name);
+                        totalSize += folderSize;
+                    }
+                } else if (item.metadata && item.metadata.size) {
+                    totalSize += item.metadata.size;
+                }
+            }
+        }
+        return totalSize;
+    } catch (e) {
+        console.error(`Status check failed: ${e.message}`);
+        return 0;
+    }
+}
+
+module.exports = { uploadFileToSupabase, deleteFilesFromSupabase, getSupabaseStorageSize }
 
 
