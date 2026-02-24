@@ -18,7 +18,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'In Progress', 'Completed', 'Cancelled', 'Due', 'Delay', 'Partial Delivery','Wax','Casted','DC','PendingDisp','Delivered'],
+        enum: ['Pending', 'In Progress', 'Completed', 'Cancelled', 'Due', 'Delay', 'Partial Delivery', 'Wax', 'Casted', 'DC', 'PendingDisp', 'Delivered'],
         default: 'Pending'
     },
 
@@ -45,7 +45,7 @@ const orderSchema = new mongoose.Schema({
             },
             colorstone: {
                 type: String,
-                enum: ["Red", "Blue", "Green", "Black", "White", "Same as image","Others", ""],
+                enum: ["Red", "Blue", "Green", "Black", "White", "Same as image", "Others", ""],
                 default: ""
             },
             rhodium: {
@@ -75,11 +75,11 @@ const orderSchema = new mongoose.Schema({
                 type: Number,
 
             },
-            partialdelivery:[
+            partialdelivery: [
                 {
-                    deliverydate:Date,
-                    qty:Number,
-                    deliverynote:String
+                    deliverydate: Date,
+                    qty: Number,
+                    deliverynote: String
                 }
             ],
             remarks: {
@@ -97,7 +97,14 @@ const orderSchema = new mongoose.Schema({
         ref: "User",
         default: null
 
-    }, 
+    },
+    statushistory: [
+        {
+            status: { type: String, required: true },
+            updatedby: { type: mongoose.ObjectId, ref: "User" },
+            updatedAt: { type: Date, default: Date.now }
+        }
+    ]
 }, {
     timestamps: true
 });

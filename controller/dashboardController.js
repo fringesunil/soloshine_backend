@@ -1,43 +1,45 @@
 const Order = require("../model/orderModel");
+const mongoose = require("mongoose");
+const { getSupabaseStorageSize } = require("../utlis/supabase");
 
 const getDashboardStats = async (req, res) => {
-    try {
-      
-        const singleOrderCount = await Order.countDocuments({ ordertype: 'Single' });
-        const bulkOrderCount = await Order.countDocuments({ ordertype: 'Bulk' });
-        
-        const pendingCount = await Order.countDocuments({ status: 'Pending' });
-        const inProgressCount = await Order.countDocuments({ status: 'In Progress' });
-        const completedCount = await Order.countDocuments({ status: 'Completed' });
-        const cancelledCount = await Order.countDocuments({ status: 'Cancelled' });
-        
-        const totalOrders = await Order.countDocuments();
+  try {
 
-        res.status(200).json({
-            success: true,
-            data: {
-                orderTypeCounts: {
-                    single: singleOrderCount,
-                    bulk: bulkOrderCount,
-                    total: totalOrders
-                },
-                statusCounts: {
-                    pending: pendingCount,
-                    inProgress: inProgressCount,
-                    completed: completedCount,
-                    cancelled: cancelledCount
-                }
-            },
-            message: "Dashboard statistics retrieved successfully"
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            data: null,
-            message: "Server error",
-            error: error.message
-        });
-    }
+    const singleOrderCount = await Order.countDocuments({ ordertype: 'Single' });
+    const bulkOrderCount = await Order.countDocuments({ ordertype: 'Bulk' });
+
+    const pendingCount = await Order.countDocuments({ status: 'Pending' });
+    const inProgressCount = await Order.countDocuments({ status: 'In Progress' });
+    const completedCount = await Order.countDocuments({ status: 'Completed' });
+    const cancelledCount = await Order.countDocuments({ status: 'Cancelled' });
+
+    const totalOrders = await Order.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        orderTypeCounts: {
+          single: singleOrderCount,
+          bulk: bulkOrderCount,
+          total: totalOrders
+        },
+        statusCounts: {
+          pending: pendingCount,
+          inProgress: inProgressCount,
+          completed: completedCount,
+          cancelled: cancelledCount
+        }
+      },
+      message: "Dashboard statistics retrieved successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: "Server error",
+      error: error.message
+    });
+  }
 };
 
 const getOrderGraphData = async (req, res) => {
@@ -217,7 +219,65 @@ const getOrderGraphData = async (req, res) => {
 
 
 
-module.exports={
-    getDashboardStats,
-    getOrderGraphData
+const getStorageStats = async (req, res) => {
+  try {
+    // 1. Get MongoDB Storage Stats
+    let dbStats = {};
+    try {
+      if (mongoose.connection && mongoose.connection.db) {
+        dbStats = await mongoose.connection.db.stats();
+      }
+    } catch (dbError) {
+      console.error("DB Stats Error:", dbError);
+    }
+
+    // 2. Get Supabase Storage size
+    let supabaseSize = 0;
+    try {
+      // Note: Since Supabase sometimes restricts API on quota overflow, 
+      // this might return 0 if the quota error occurs.
+      supabaseSize = await getSupabaseStorageSize();
+    } catch (supaError) {
+      console.error("Supabase Stats Error:", supaError);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        mongodb: {
+          database: dbStats.db || "unknown",
+          collections: dbStats.collections || 0,
+          views: dbStats.views || 0,
+          objects: dbStats.objects || 0,
+          avgObjSize: dbStats.avgObjSize || 0,
+          dataSize: dbStats.dataSize || 0, // Total size of all uncompressed records
+          storageSize: dbStats.storageSize || 0, // Total size of all collections
+          totalFreeStorageSize: dbStats.freeStorageSize || 0, // Free space on disk
+          indexes: dbStats.indexes || 0,
+          indexSize: dbStats.indexSize || 0,
+          totalSize: dbStats.totalSize || 0, // storageSize + indexSize
+          totalSizeMb: dbStats.totalSize ? (dbStats.totalSize / (1024 * 1024)).toFixed(2) + " MB" : 0,
+        },
+        supabase: {
+          bucket: process.env.SUPABASE_BUCKET || "unknown",
+          estimatedTotalSizeInBytes: supabaseSize,
+          estimatedTotalSizeMb: (supabaseSize / (1024 * 1024)).toFixed(2) + " MB"
+        }
+      },
+      message: "Storage statistics retrieved successfully (Note: Supabase size might be unavailable if API is restricted)"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: "Server error while fetching storage stats",
+      error: error.message
+    });
+  }
+};
+
+module.exports = {
+  getDashboardStats,
+  getOrderGraphData,
+  getStorageStats
 }

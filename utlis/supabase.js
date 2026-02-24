@@ -4,11 +4,11 @@ const fs = require('fs')
 const { createClient } = require('@supabase/supabase-js')
 
 const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY 
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY
 const supabaseBucket = process.env.SUPABASE_BUCKET
 
 if (!supabaseUrl || !supabaseKey) {
-   throw new Error('Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY')
+    throw new Error('Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY')
 }
 
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null
@@ -47,7 +47,7 @@ const uploadFileToSupabase = async (filePath, options = {}) => {
         const fileName = makeUniqueFileName(providedName)
         const destinationPath = options.destinationPath || `orders/${fileName}`
 
-        
+
         const ext = path.extname(fileName).toLowerCase()
         let contentType = 'application/octet-stream'
         if (ext === '.pdf') contentType = 'application/pdf'
@@ -85,6 +85,61 @@ const uploadFileToSupabase = async (filePath, options = {}) => {
 
 
 
-module.exports = {uploadFileToSupabase }
+const deleteFilesFromSupabase = async (fileUrls) => {
+    try {
+        if (!supabase || !supabaseBucket) return;
+        if (!fileUrls || fileUrls.length === 0) return;
+        const pathsToDelete = fileUrls.map(url => {
+            try {
+                if (url) {
+                    const parts = url.split(`/public/${supabaseBucket}/`);
+                    if (parts.length > 1) return parts[1];
+                }
+            } catch (err) { }
+            return null;
+        }).filter(path => path !== null);
+        if (pathsToDelete.length > 0) {
+            const { error } = await supabase.storage.from(supabaseBucket).remove(pathsToDelete);
+            if (error) console.error("Error deleting from supabase:", error);
+        }
+    } catch (e) {
+        console.error(`File deletion failed: ${e.message}`);
+    }
+}
+const getSupabaseStorageSize = async (folderPath = '') => {
+    try {
+        if (!supabase || !supabaseBucket) return 0;
+        let totalSize = 0;
+        const { data, error } = await supabase.storage.from(supabaseBucket).list(folderPath, {
+            limit: 100,
+            offset: 0,
+            sortBy: { column: 'name', order: 'asc' },
+        });
+
+        if (error) {
+            console.error("Error listing supabase files:", error);
+            return 0;
+        }
+
+        if (data && data.length > 0) {
+            for (const item of data) {
+                if (item.id === null) {
+                    if (item.name !== '.emptyFolderPlaceholder') {
+                        const folderSize = await getSupabaseStorageSize(folderPath ? `${folderPath}/${item.name}` : item.name);
+                        totalSize += folderSize;
+                    }
+                } else if (item.metadata && item.metadata.size) {
+                    totalSize += item.metadata.size;
+                }
+            }
+        }
+        return totalSize;
+    } catch (e) {
+        console.error(`Status check failed: ${e.message}`);
+        return 0;
+    }
+}
+
+module.exports = { uploadFileToSupabase, deleteFilesFromSupabase, getSupabaseStorageSize }
 
 
