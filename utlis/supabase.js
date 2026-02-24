@@ -4,11 +4,11 @@ const fs = require('fs')
 const { createClient } = require('@supabase/supabase-js')
 
 const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY 
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY
 const supabaseBucket = process.env.SUPABASE_BUCKET
 
 if (!supabaseUrl || !supabaseKey) {
-   throw new Error('Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY')
+    throw new Error('Supabase is not configured. Please set SUPABASE_URL and SUPABASE_SERVICE_KEY or SUPABASE_ANON_KEY')
 }
 
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null
@@ -47,7 +47,7 @@ const uploadFileToSupabase = async (filePath, options = {}) => {
         const fileName = makeUniqueFileName(providedName)
         const destinationPath = options.destinationPath || `orders/${fileName}`
 
-        
+
         const ext = path.extname(fileName).toLowerCase()
         let contentType = 'application/octet-stream'
         if (ext === '.pdf') contentType = 'application/pdf'
@@ -85,6 +85,27 @@ const uploadFileToSupabase = async (filePath, options = {}) => {
 
 
 
-module.exports = {uploadFileToSupabase }
+const deleteFilesFromSupabase = async (fileUrls) => {
+    try {
+        if (!supabase || !supabaseBucket) return;
+        if (!fileUrls || fileUrls.length === 0) return;
+        const pathsToDelete = fileUrls.map(url => {
+            try {
+                if (url) {
+                    const parts = url.split(`/public/${supabaseBucket}/`);
+                    if (parts.length > 1) return parts[1];
+                }
+            } catch (err) { }
+            return null;
+        }).filter(path => path !== null);
+        if (pathsToDelete.length > 0) {
+            const { error } = await supabase.storage.from(supabaseBucket).remove(pathsToDelete);
+            if (error) console.error("Error deleting from supabase:", error);
+        }
+    } catch (e) {
+        console.error(`File deletion failed: ${e.message}`);
+    }
+}
+module.exports = { uploadFileToSupabase, deleteFilesFromSupabase }
 
 

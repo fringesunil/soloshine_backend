@@ -1,7 +1,7 @@
 const Order = require("../model/orderModel");
 const User = require("../model/userModel");
 const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
-const { uploadFileToSupabase } = require("../utlis/supabase");
+const { uploadFileToSupabase, deleteFilesFromSupabase } = require("../utlis/supabase");
 const { sendNotificationToRoles } = require("../utlis/notification");
 const { getNextSequence } = require("../utlis/sequence");
 
@@ -487,6 +487,54 @@ const updateOrderStatusBulk = async (req, res) => {
     }
 };
 
+const deleteCompletedAndCancelledOrders = async (req, res) => {
+    try {
+        const ordersToDelete = await Order.find({ status: { $in: ['Delivered', 'Cancelled'] } });
+
+        if (!ordersToDelete || ordersToDelete.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: "No cancelled or delivered orders found to delete"
+            });
+        }
+
+        let imageUrls = [];
+        ordersToDelete.forEach(order => {
+            if (order.ornamentdetails && Array.isArray(order.ornamentdetails)) {
+                order.ornamentdetails.forEach(item => {
+                    if (item.image && Array.isArray(item.image)) {
+                        imageUrls.push(...item.image);
+                    }
+                });
+            }
+        });
+
+        if (imageUrls.length > 0) {
+            await deleteFilesFromSupabase(imageUrls);
+        }
+
+        const orderIds = ordersToDelete.map(order => order._id);
+        const result = await Order.deleteMany({ _id: { $in: orderIds } });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                deletedOrdersCount: result.deletedCount,
+                deletedImagesCount: imageUrls.length
+            },
+            message: "Cancelled and Delivered orders and their associated images deleted successfully"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getAllOrder,
     getOrderbyid,
@@ -494,4 +542,5 @@ module.exports = {
     updateOrder,
     deleteOrder,
     updateOrderStatusBulk,
+    deleteCompletedAndCancelledOrders,
 }
