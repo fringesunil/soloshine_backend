@@ -1,7 +1,7 @@
 const Order = require("../model/orderModel");
 const User = require("../model/userModel");
 const { imageUpload, imageUploadimgbb } = require("../utlis/imageUpload");
-const { uploadFileToSupabase, deleteFilesFromSupabase } = require("../utlis/supabase");
+const { uploadFileToStorage, deleteFilesFromStorage } = require("../utlis/storageManager");
 const { sendNotificationToRoles } = require("../utlis/notification");
 const { getNextSequence } = require("../utlis/sequence");
 
@@ -94,7 +94,7 @@ const addOrder = async (req, res) => {
 
                 if (imageFilesForItem.length > 0) {
                     const uploadedUrls = await Promise.all(
-                        imageFilesForItem.map(file => uploadFileToSupabase(file.path, { fileName: file.originalname }))
+                        imageFilesForItem.map(file => uploadFileToStorage(file.path, { fileName: file.originalname }))
                     );
                     ornamentDetails[i].image = uploadedUrls;
                 }
@@ -353,7 +353,7 @@ const updateOrder = async (req, res) => {
 
                 if (imageFilesForItem.length > 0) {
                     const uploadedUrls = await Promise.all(
-                        imageFilesForItem.map(file => uploadFileToSupabase(file.path, { fileName: file.originalname }))
+                        imageFilesForItem.map(file => uploadFileToStorage(file.path, { fileName: file.originalname }))
                     );
                     ornamentDetails[i].image = uploadedUrls;
                 } else {
@@ -533,7 +533,7 @@ const deleteCompletedAndCancelledOrders = async (req, res) => {
         });
 
         if (imageUrls.length > 0) {
-            await deleteFilesFromSupabase(imageUrls);
+            await deleteFilesFromStorage(imageUrls);
         }
 
         const orderIds = ordersToDelete.map(order => order._id);

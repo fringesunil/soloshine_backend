@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 require("dotenv").config();
 const Order = require("./model/orderModel"); // adjust path if needed
-const { deleteFilesFromSupabase } = require("./utlis/supabase");
+const { deleteFilesFromStorage } = require("./utlis/storageManager");
 
 const cleanup = async () => {
     try {
@@ -29,9 +29,9 @@ const cleanup = async () => {
         console.log(`Found ${ordersToDelete.length} orders and ${imageUrls.length} images to delete.`);
 
         if (imageUrls.length > 0) {
-            console.log("Deleting images from Supabase...");
-            await deleteFilesFromSupabase(imageUrls);
-            console.log("Images deleted from Supabase.");
+            console.log("Deleting images/pdfs from storage provider...");
+            await deleteFilesFromStorage(imageUrls);
+            console.log("Images/pdfs deleted from storage.");
         }
 
         const orderIds = ordersToDelete.map(order => order._id);
