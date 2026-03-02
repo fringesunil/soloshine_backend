@@ -1,6 +1,6 @@
 const Order = require("../model/orderModel");
 const mongoose = require("mongoose");
-const { getSupabaseStorageSize } = require("../utlis/supabase");
+const { getStorageSizeStats } = require("../utlis/storageManager");
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -231,14 +231,12 @@ const getStorageStats = async (req, res) => {
       console.error("DB Stats Error:", dbError);
     }
 
-    // 2. Get Supabase Storage size
-    let supabaseSize = 0;
+    // 2. Get Storage size stats (Supabase and Cloudinary)
+    let storageStats = { supabaseBytes: 0, cloudinaryBytes: 0 };
     try {
-      // Note: Since Supabase sometimes restricts API on quota overflow, 
-      // this might return 0 if the quota error occurs.
-      supabaseSize = await getSupabaseStorageSize();
-    } catch (supaError) {
-      console.error("Supabase Stats Error:", supaError);
+      storageStats = await getStorageSizeStats();
+    } catch (apiError) {
+      console.error("Storage Stats Error:", apiError);
     }
 
     res.status(200).json({
@@ -260,11 +258,16 @@ const getStorageStats = async (req, res) => {
         },
         supabase: {
           bucket: process.env.SUPABASE_BUCKET || "unknown",
-          estimatedTotalSizeInBytes: supabaseSize,
-          estimatedTotalSizeMb: (supabaseSize / (1024 * 1024)).toFixed(2) + " MB"
+          estimatedTotalSizeInBytes: storageStats.supabaseBytes,
+          estimatedTotalSizeMb: (storageStats.supabaseBytes / (1024 * 1024)).toFixed(2) + " MB"
+        },
+        cloudinary: {
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "unknown",
+          estimatedTotalSizeInBytes: storageStats.cloudinaryBytes,
+          estimatedTotalSizeMb: (storageStats.cloudinaryBytes / (1024 * 1024)).toFixed(2) + " MB"
         }
       },
-      message: "Storage statistics retrieved successfully (Note: Supabase size might be unavailable if API is restricted)"
+      message: "Storage statistics retrieved successfully"
     });
   } catch (error) {
     res.status(500).json({
