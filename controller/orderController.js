@@ -351,18 +351,31 @@ const updateOrder = async (req, res) => {
                 const imageFieldName = `image${i}`;
                 const imageFilesForItem = req.files.filter(file => file.fieldname === imageFieldName);
 
+                // Get images already present for this item (sent by client)
+                let currentItemImages = [];
+                if (ornamentDetails[i].image && Array.isArray(ornamentDetails[i].image)) {
+                    currentItemImages = ornamentDetails[i].image;
+                } else if (existingOrder.ornamentdetails[i]?.image) {
+                    // Fallback to database only if client didn't provide an image list
+                    currentItemImages = existingOrder.ornamentdetails[i].image;
+                }
+
                 if (imageFilesForItem.length > 0) {
                     const uploadedUrls = await Promise.all(
                         imageFilesForItem.map(file => uploadFileToStorage(file.path, { fileName: file.originalname }))
                     );
-                    ornamentDetails[i].image = uploadedUrls;
+                    // Merge existing and new images
+                    ornamentDetails[i].image = [...currentItemImages, ...uploadedUrls];
                 } else {
-                    ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
+                    ornamentDetails[i].image = currentItemImages;
                 }
             }
         } else if (ornamentDetails) {
             for (let i = 0; i < ornamentDetails.length; i++) {
-                ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
+                // If client didn't send an image array, preserve what's in the database
+                if (!ornamentDetails[i].image || !Array.isArray(ornamentDetails[i].image)) {
+                    ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
+                }
             }
         }
 
