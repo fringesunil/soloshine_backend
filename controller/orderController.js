@@ -93,10 +93,11 @@ const addOrder = async (req, res) => {
                 const imageFilesForItem = req.files.filter(file => file.fieldname === imageFieldName);
 
                 if (imageFilesForItem.length > 0) {
-                    const uploadedUrls = await Promise.all(
+                    const uploadResults = await Promise.all(
                         imageFilesForItem.map(file => uploadFileToStorage(file.path, { fileName: file.originalname }))
                     );
-                    ornamentDetails[i].image = uploadedUrls;
+                    ornamentDetails[i].image = uploadResults.map(r => r.url);
+                    ornamentDetails[i].backupimage = uploadResults.map(r => r.backupUrl || '');
                 }
             }
         }
@@ -360,14 +361,24 @@ const updateOrder = async (req, res) => {
                     currentItemImages = existingOrder.ornamentdetails[i].image;
                 }
 
+                // Get backup images already present for this item
+                let currentItemBackupImages = [];
+                if (ornamentDetails[i].backupimage && Array.isArray(ornamentDetails[i].backupimage)) {
+                    currentItemBackupImages = ornamentDetails[i].backupimage;
+                } else if (existingOrder.ornamentdetails[i]?.backupimage) {
+                    currentItemBackupImages = existingOrder.ornamentdetails[i].backupimage;
+                }
+
                 if (imageFilesForItem.length > 0) {
-                    const uploadedUrls = await Promise.all(
+                    const uploadResults = await Promise.all(
                         imageFilesForItem.map(file => uploadFileToStorage(file.path, { fileName: file.originalname }))
                     );
                     // Merge existing and new images
-                    ornamentDetails[i].image = [...currentItemImages, ...uploadedUrls];
+                    ornamentDetails[i].image = [...currentItemImages, ...uploadResults.map(r => r.url)];
+                    ornamentDetails[i].backupimage = [...currentItemBackupImages, ...uploadResults.map(r => r.backupUrl || '')];
                 } else {
                     ornamentDetails[i].image = currentItemImages;
+                    ornamentDetails[i].backupimage = currentItemBackupImages;
                 }
             }
         } else if (ornamentDetails) {
@@ -375,6 +386,9 @@ const updateOrder = async (req, res) => {
                 // If client didn't send an image array, preserve what's in the database
                 if (!ornamentDetails[i].image || !Array.isArray(ornamentDetails[i].image)) {
                     ornamentDetails[i].image = existingOrder.ornamentdetails[i]?.image || [];
+                }
+                if (!ornamentDetails[i].backupimage || !Array.isArray(ornamentDetails[i].backupimage)) {
+                    ornamentDetails[i].backupimage = existingOrder.ornamentdetails[i]?.backupimage || [];
                 }
             }
         }
@@ -540,6 +554,9 @@ const deleteCompletedAndCancelledOrders = async (req, res) => {
                 order.ornamentdetails.forEach(item => {
                     if (item.image && Array.isArray(item.image)) {
                         imageUrls.push(...item.image);
+                    }
+                    if (item.backupimage && Array.isArray(item.backupimage)) {
+                        imageUrls.push(...item.backupimage);
                     }
                 });
             }

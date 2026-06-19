@@ -85,7 +85,8 @@ const orderSchema = new mongoose.Schema({
             remarks: {
                 type: String,
             },
-            image: [String]
+            image: [String],
+            backupimage: [String]
         }
     ],
     partyname: {

@@ -22,6 +22,9 @@ const cleanup = async () => {
                     if (item.image && Array.isArray(item.image)) {
                         imageUrls.push(...item.image);
                     }
+                    if (item.backupimage && Array.isArray(item.backupimage)) {
+                        imageUrls.push(...item.backupimage);
+                    }
                 });
             }
         });

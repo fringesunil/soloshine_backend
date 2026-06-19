@@ -3,6 +3,8 @@ const path = require('path')
 const fs = require('fs')
 const { createClient } = require('@supabase/supabase-js')
 const cloudinary = require('cloudinary').v2
+const axios = require('axios')
+const FormData = require('form-data')
 
 // Supabase
 const supabaseUrl = process.env.SUPABASE_URL
@@ -36,6 +38,36 @@ const makeUniqueFileName = (inputFileName) => {
     return `${timestamp}_${base}${ext}`
 }
 
+const uploadToImgBB = async (filePath) => {
+    try {
+        if (!process.env.IMGBB_API_KEY) {
+            console.error('ImgBB API key is not configured.');
+            return null;
+        }
+
+        const formData = new FormData();
+        formData.append('image', fs.createReadStream(filePath));
+
+        const response = await axios.post(
+            `https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`,
+            formData,
+            {
+                headers: {
+                    ...formData.getHeaders()
+                }
+            }
+        );
+
+        if (response.data && response.data.success && response.data.data) {
+            return response.data.data.url;
+        }
+        return null;
+    } catch (e) {
+        console.error(`ImgBB upload failed: ${e.message}`);
+        return null;
+    }
+}
+
 const uploadFileToStorage = async (filePath, options = {}) => {
     try {
         if (!fs.existsSync(filePath)) {
@@ -45,6 +77,9 @@ const uploadFileToStorage = async (filePath, options = {}) => {
         const providedName = options.fileName || path.basename(filePath)
         const fileName = makeUniqueFileName(providedName)
         const ext = path.extname(fileName).toLowerCase()
+
+        let primaryUrl = '';
+        let backupUrl = '';
 
         if (ext === '.pdf') {
             // Upload to Supabase
@@ -75,7 +110,8 @@ const uploadFileToStorage = async (filePath, options = {}) => {
                 throw new Error('Failed to get public URL from Supabase')
             }
 
-            return publicUrlData.publicUrl
+            primaryUrl = publicUrlData.publicUrl;
+            backupUrl = ''; // No backup for PDFs as requested
         } else {
             // Upload to Cloudinary
             if (!process.env.CLOUDINARY_CLOUD_NAME) {
@@ -89,8 +125,23 @@ const uploadFileToStorage = async (filePath, options = {}) => {
                 resource_type: 'auto' // Handle any image format
             });
 
-            return result.secure_url;
+            primaryUrl = result.secure_url;
+
+            // Upload backup to ImgBB
+            try {
+                const imgbbUrl = await uploadToImgBB(filePath);
+                if (imgbbUrl) {
+                    backupUrl = imgbbUrl;
+                }
+            } catch (backupErr) {
+                console.error("Backup upload to ImgBB failed:", backupErr.message);
+            }
         }
+
+        return {
+            url: primaryUrl,
+            backupUrl: backupUrl
+        };
 
     } catch (e) {
         throw new Error(`File upload failed: ${e.message}`)
@@ -186,4 +237,67 @@ const getStorageSizeStats = async (folderPath = '') => {
     }
 }
 
-module.exports = { uploadFileToStorage, deleteFilesFromStorage, getStorageSizeStats }
+const cleanOrphanedCloudinaryImages = async (activeImageUrls) => {
+    try {
+        if (!process.env.CLOUDINARY_API_KEY) {
+            throw new Error('Cloudinary is not configured.');
+        }
+
+        const dbPublicIds = new Set();
+        if (activeImageUrls && Array.isArray(activeImageUrls)) {
+            activeImageUrls.forEach(url => {
+                if (url && url.includes('cloudinary.com')) {
+                    const publicId = extractCloudinaryPublicId(url);
+                    if (publicId) {
+                        dbPublicIds.add(publicId);
+                    }
+                }
+            });
+        }
+
+        let nextCursor = null;
+        let orphanedPublicIds = [];
+        let totalChecked = 0;
+
+        do {
+            const result = await cloudinary.api.resources({
+                type: 'upload',
+                prefix: 'soloshine_orders/',
+                max_results: 500,
+                next_cursor: nextCursor
+            });
+
+            if (result && result.resources) {
+                totalChecked += result.resources.length;
+                for (const res of result.resources) {
+                    if (!dbPublicIds.has(res.public_id)) {
+                        orphanedPublicIds.push(res.public_id);
+                    }
+                }
+                nextCursor = result.next_cursor;
+            } else {
+                break;
+            }
+        } while (nextCursor);
+
+        let deletedCount = 0;
+        for (let i = 0; i < orphanedPublicIds.length; i += 100) {
+            const chunk = orphanedPublicIds.slice(i, i + 100);
+            const delResult = await cloudinary.api.delete_resources(chunk);
+            if (delResult && delResult.deleted) {
+                deletedCount += Object.keys(delResult.deleted).length;
+            }
+        }
+
+        return {
+            success: true,
+            totalChecked,
+            orphanedCount: orphanedPublicIds.length,
+            deletedCount
+        };
+    } catch (e) {
+        throw new Error(`Cloudinary cleanup failed: ${e.message}`);
+    }
+}
+
+module.exports = { uploadFileToStorage, deleteFilesFromStorage, getStorageSizeStats, cleanOrphanedCloudinaryImages }

@@ -1,6 +1,6 @@
 const Order = require("../model/orderModel");
 const mongoose = require("mongoose");
-const { getStorageSizeStats } = require("../utlis/storageManager");
+const { getStorageSizeStats, cleanOrphanedCloudinaryImages } = require("../utlis/storageManager");
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -279,8 +279,40 @@ const getStorageStats = async (req, res) => {
   }
 };
 
+const cleanCloudinaryStorage = async (req, res) => {
+  try {
+    const orders = await Order.find({});
+    let activeImageUrls = [];
+    orders.forEach(order => {
+      if (order.ornamentdetails && Array.isArray(order.ornamentdetails)) {
+        order.ornamentdetails.forEach(item => {
+          if (item.image && Array.isArray(item.image)) {
+            activeImageUrls.push(...item.image);
+          }
+        });
+      }
+    });
+
+    const cleanupStats = await cleanOrphanedCloudinaryImages(activeImageUrls);
+
+    res.status(200).json({
+      success: true,
+      data: cleanupStats,
+      message: "Cloudinary storage cleanup completed successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      data: null,
+      message: "Server error during Cloudinary storage cleanup",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getOrderGraphData,
-  getStorageStats
+  getStorageStats,
+  cleanCloudinaryStorage
 }
