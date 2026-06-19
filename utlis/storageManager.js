@@ -237,11 +237,14 @@ const getStorageSizeStats = async (folderPath = '') => {
     }
 }
 
-const cleanOrphanedCloudinaryImages = async (activeImageUrls) => {
+const cleanOrphanedCloudinaryImages = async (activeImageUrls, startDate, endDate) => {
     try {
         if (!process.env.CLOUDINARY_API_KEY) {
             throw new Error('Cloudinary is not configured.');
         }
+
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
 
         const dbPublicIds = new Set();
         if (activeImageUrls && Array.isArray(activeImageUrls)) {
@@ -271,7 +274,17 @@ const cleanOrphanedCloudinaryImages = async (activeImageUrls) => {
                 totalChecked += result.resources.length;
                 for (const res of result.resources) {
                     if (!dbPublicIds.has(res.public_id)) {
-                        orphanedPublicIds.push(res.public_id);
+                        const createdDate = new Date(res.created_at);
+                        let matchesDateRange = true;
+                        if (start && createdDate < start) {
+                            matchesDateRange = false;
+                        }
+                        if (end && createdDate > end) {
+                            matchesDateRange = false;
+                        }
+                        if (matchesDateRange) {
+                            orphanedPublicIds.push(res.public_id);
+                        }
                     }
                 }
                 nextCursor = result.next_cursor;

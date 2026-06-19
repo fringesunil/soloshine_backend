@@ -281,6 +281,7 @@ const getStorageStats = async (req, res) => {
 
 const cleanCloudinaryStorage = async (req, res) => {
   try {
+    const { startDate, endDate } = req.body;
     const orders = await Order.find({});
     let activeImageUrls = [];
     orders.forEach(order => {
@@ -289,11 +290,14 @@ const cleanCloudinaryStorage = async (req, res) => {
           if (item.image && Array.isArray(item.image)) {
             activeImageUrls.push(...item.image);
           }
+          if (item.backupimage && Array.isArray(item.backupimage)) {
+            activeImageUrls.push(...item.backupimage);
+          }
         });
       }
     });
 
-    const cleanupStats = await cleanOrphanedCloudinaryImages(activeImageUrls);
+    const cleanupStats = await cleanOrphanedCloudinaryImages(activeImageUrls, startDate, endDate);
 
     res.status(200).json({
       success: true,

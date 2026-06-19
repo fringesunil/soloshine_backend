@@ -18,16 +18,18 @@ async function runTest() {
                     if (item.image && Array.isArray(item.image)) {
                         activeImageUrls.push(...item.image);
                     }
+                    if (item.backupimage && Array.isArray(item.backupimage)) {
+                        activeImageUrls.push(...item.backupimage);
+                    }
                 });
             }
         });
 
         console.log(`Found ${activeImageUrls.length} active image URLs in MongoDB.`);
         
-        console.log('Testing cleanOrphanedCloudinaryImages in dry-run/mock mode...');
-        // We will call the function. Since we might not want to delete actual images without being sure,
-        // we can observe the counts returned by the resources and deletion.
-        const stats = await cleanOrphanedCloudinaryImages(activeImageUrls);
+        console.log('Testing cleanOrphanedCloudinaryImages with date range (last 30 days)...');
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const stats = await cleanOrphanedCloudinaryImages(activeImageUrls, thirtyDaysAgo, new Date());
         console.log('Stats returned:', stats);
 
         console.log('Test completed successfully.');
