@@ -144,7 +144,9 @@ const uploadFileToStorage = async (filePath, options = {}) => {
         };
 
     } catch (e) {
-        throw new Error(`File upload failed: ${e.message}`)
+        console.error("Error inside uploadFileToStorage:", e);
+        const errorMsg = e.message || (e.error && e.error.message) || (typeof e === 'object' ? JSON.stringify(e) : String(e));
+        throw new Error(`File upload failed: ${errorMsg}`)
     }
 }
 

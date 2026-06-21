@@ -154,6 +154,7 @@ const addOrder = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Error in addOrder controller:", error);
         res.status(500).json({
             success: false,
             data: null,
@@ -453,6 +454,7 @@ const updateOrder = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Error in updateOrder controller:", error);
         res.status(500).json({
             success: false,
             data: null,
